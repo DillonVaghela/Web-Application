@@ -1,0 +1,11 @@
+body{
+  margin-left: 15%;
+  margin-right:15%;
+}
+
+.tableDesign{
+  background-color: #a9a9a9;
+}
+.tableDesign:hover{
+  background-color: #dcdcdc;
+}

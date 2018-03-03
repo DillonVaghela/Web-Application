@@ -1,0 +1,135 @@
+<html>
+
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href='/static/design.css' />
+    <title> REGISTER </title>
+  </head>
+
+  <body background = 'https://www.allenbraithwaite.co.uk/images/product/nordic-elegance-plain-wallpaper-grandeco-neutral-ng1003.jpg'>
+    <nav class="navbar navbar-default" style = 'padding-top:30px;padding-bottom:30px;'>
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a href= "{% url 'index' %}" class="navbar-brand" > NSBT </a>
+        </div>
+        <ul class="nav navbar-nav">
+          <li class="active"> <a href= "{% url 'index' %}">  Home  </a> </li>
+          <li>  <a href= "{% url 'sportsPage' %}">  Sports  </a>  </li>
+          <li>  <a href= "{% url 'businessPage' %}">  Business  </a>  </li>
+          <li>  <a href= "{% url 'technologyPage' %}">  Technology  </a>  </li>
+        </ul>
+      </div>
+    </nav>
+
+    <form class="form-horizontal" style="max-width:800px;margin:30px;" ng-app="app" name = "registerForm" >
+      <div class="form-group">
+        <label class="control-label col-sm-2">  Name: </label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="name" placeholder="Enter your Name" name="RegisterName" ng-model="names" required>
+          <span style="color:red" ng-show="registerForm.RegisterName.$error.required"> Name Required!</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2">  Password: </label>
+        <div class="col-sm-10">
+          <input type="password" class="form-control" id="pwd" placeholder="create a password" name = "pwd" ng-model="nP" required>
+          <span style="color:red" ng-show="registerForm.pwd.$error.required">Password Required!</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2"> Email:</label>
+        <div class="col-sm-10">
+          <input type="email" class="form-control" id="email" placeholder="Enter your email(login username)" name="registerEmail" ng-model="emailAdd" required>
+          <span style="color:red" ng-show="registerForm.registerEmail.$error.required">Required!</span>
+          <span style="color:red" ng-show="registerForm.registerEmail.$error.email">invalid e-mail </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2">  Number: </label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="numb" placeholder="Enter your Number" name="newNumb" ng-model="number" ng-minlength="11" ng-maxlength="11" numbers-only class="form-control" required>
+          <span style="color:red" ng-show="registerForm.newNumb.$error.required">Number Required!</span>
+          <span style="color:red" ng-show="registerForm.newNumb.$error.minlength">Invalid Number</span>
+          <span style="color:red" ng-show="registerForm.newNumb.$error.maxlength">Invalid Number</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default" onclick = 'addUsers()' ng-disabled="registerForm.$invalid">  Register </button>
+          <label id = "confirmation" style = "display: none;"> Successfully registered </label>
+        </div>
+      </div>
+    </form>
+  </body>
+
+  <script type = 'text/javascript'>
+    var urlsubstring = window.location.href
+    var newurl = urlsubstring.substring(0,30)
+
+
+    function goHome(page) {
+      var url = window.location.href.split("/sign")[0]
+      window.location.href = url + "?" + page
+    }
+
+    function addUsers(){
+      $.ajax({
+        type:'POST',
+        url: 'http://127.0.0.1:8000/newsapp/addUser/',
+        data: {
+          fname : $("#name").val(),
+          email : $("#email").val(),
+          password : $("#pwd").val(),
+          number : $("#numb").val(),
+        },
+        success: function(data){
+          if(data[0].success == 'true'){
+            $("#confirmation").html("Successfully created user")
+            $("#confirmation").css("color","#2E8B57")
+            $('#confirmation').css("display","inline")
+            //alert("testing")
+          } else {
+            $("#confirmation").html("username is taken")
+            $("#confirmation").css("color","#FF0000")
+            $('#confirmation').css("display","inline")
+            //alert("testing 2")
+          }
+        }
+      })
+  //    var url = window.location.href.split("/sign")[0]
+  //    window.location.href = url
+    }
+
+    function clearTextFields(){
+      $("#name").val(""),
+      $("#email").val(""),
+      $("#pwd").val(""),
+      $("#numb").val("")
+    }
+
+    var app = angular.module('app', []);
+    app.directive('numbersOnly', function () {
+      return {
+        require: 'ngModel',
+        link: function (scope, element, attr, ngModelCtrl) {
+          function fromUser(text) {
+            if (text) {
+              var transformedInput = text.replace(/[^0-9]/g, '');
+
+              if (transformedInput !== text) {
+                ngModelCtrl.$setViewValue(transformedInput);
+                ngModelCtrl.$render();
+              }
+              return transformedInput;
+            }
+            return undefined;
+          }
+          ngModelCtrl.$parsers.push(fromUser);
+        }
+      };
+    });
+
+  </script>
+</html>

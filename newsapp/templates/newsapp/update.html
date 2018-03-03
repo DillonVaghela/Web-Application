@@ -1,0 +1,156 @@
+<html>
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href='/static/design.css' />
+  <title> Update Details </title>
+</head>
+<body onload="checkUserRequest()" background = 'https://www.allenbraithwaite.co.uk/images/product/nordic-elegance-plain-wallpaper-grandeco-neutral-ng1003.jpg'>
+  <nav class="navbar navbar-default" style = 'padding-top:30px;padding-bottom:30px;'>
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="http://localhost:8000/newsapp"> NSBT </a>
+      </div>
+      <ul class="nav navbar-nav">
+        <li id="homeBubble" class="active"> <a href="http://127.0.0.1:8000/newsapp">  Home  </a> </li>
+        <!--<li id="newsBubble">  <a href="http://127.0.0.1:8000/newsapp">  News  </a>  </li> -->
+        <li id="sportBubble">  <a href="http://127.0.0.1:8000/newsapp?s">  Sports  </a>  </li>
+        <li id="businessBubble">  <a href="http://127.0.0.1:8000/newsapp?b">  Business  </a>  </li>
+        <li id="techBubble">  <a href="http://127.0.0.1:8000/newsapp?t">  Tech  </a>  </li>
+      </ul>
+      <form class="navbar-form navbar-left">
+        <div class="form-group">
+          <label id = 'usernameField'> username  </label>
+        </div>
+        <button type="submit" class="btn btn-default" id = 'signOutButton' onclick = 'logOut()'> Sign Out </button>
+      </form>
+    </div>
+  </nav>
+
+
+  <form class = "form-horizontal" role="form" style="max-width:600px;margin:30px;" ng-app = "app" name="form">
+    <div class="form-group">
+      <label> Name</label>
+      <input type="text" class="form-control" id="newName" placeholder="Enter your new name" name="newName" ng-model="names" required>
+      <span style="color:red" ng-show="form.newName.$error.required">Username Required!</span>
+    </div>
+
+    <div class="form-group">
+      <label> Number</label>
+      <input type="text" class="form-control" id="newNum" placeholder="Enter your new number" name="newNum"ng-model="number" ng-minlength="11" ng-maxlength="11" numbers-only class="form-control" required>
+      <span style="color:red" ng-show="form.newNum.$error.required">Number Required!</span>
+      <span style="color:red" ng-show="form.newNum.$error.minlength">Min is 11</span>
+      <span style="color:red" ng-show="form.newNum.$error.maxlength">Max is 11</span>
+    </div>
+  </form>
+  <form class = "form-horizontal" role="form" style="max-width:600px;margin:30px;" ng-app = "app1" name="form1">
+    <div class="form-group">
+      <label> Current password</label>
+      <input type="password" class="form-control" id="cPass" placeholder="Enter current password">
+    </div>
+    <div class="form-group">
+      <label> New password</label>
+      <input type="password" class="form-control" id="newPass" placeholder="Enter new password">
+    </div>
+    <div class="form-group">
+      <label> Confirm password</label>
+      <input type="password" class="form-control" id="validatePass" placeholder="Confirm new password">
+    </div>
+    <button type="submit" class="btn btn-default" onclick = "updateUsers()">Update</button>
+    <Label id = "returnInfo" style = "display:hidden;"> </label>
+  </form>
+</body>
+
+<script type = 'text/javascript'>
+  var urlsubstring = window.location.href
+  var newurl = urlsubstring.substring(0,30)
+  var holder = ''
+
+  function checkUserRequest() {
+    $.ajax({
+      type: 'GET',
+      url: newurl + 'checklogin/',
+      dataType: 'json',
+      success: this.sessionCheck
+    })
+  }
+
+  function sessionCheck(json){
+    holder = json[0].username
+    if(json[0].success == 'true'){
+      $("#usernameField").html(json[0].username)
+      $("#signOutButton").css("display","inline")
+    } else {
+      window.location = newurl;
+    }
+  }
+
+  function logOut(){
+    $.ajax({
+      type:'POST',
+      url: newurl + 'logout/',
+      success: function(data){
+        window.location = newurl;
+      }
+    })
+    event.preventDefault();
+  }
+
+  function updateUsers(){
+    if($("#newPass").val() == $("#validatePass").val()){
+      $.ajax({
+        type:'POST',
+        url: newurl + 'update/',
+        data: {
+          username : holder,
+          new_name : $("#newName").val(),
+          number : $("#newNum").val(),
+          password: $("#cPass").val(),
+          new_password : $("#newPass").val(),
+        },
+        dataType: 'json',
+        success: function(data){
+          if('updated' == data.success){
+            $("#returnInfo").html("Successfully updated user")
+            $("#returnInfo").css("color","#2E8B57")
+            $('#returnInfo').css("display","inline")
+          } else {
+            $("#returnInfo").html("current password is incorrect")
+            $("#returnInfo").css("color","#FF0000")
+            $('#returnInfo').css("display","inline")
+          }
+        }
+      })
+      event.preventDefault();
+    } else {
+        $("#returnInfo").html("Passwords do not match")
+        $("#returnInfo").css("color","#FF0000")
+        $('#returnInfo').css("display","inline")
+    }
+    event.preventDefault();
+  }
+
+  var app = angular.module('app', []);
+  app.directive('numbersOnly', function () {
+    return {
+      require: 'ngModel',
+      link: function (scope, element, attr, ngModelCtrl) {
+        function fromUser(text) {
+          if (text) {
+            var transformedInput = text.replace(/[^0-9]/g, '');
+
+            if (transformedInput !== text) {
+              ngModelCtrl.$setViewValue(transformedInput);
+              ngModelCtrl.$render();
+            }
+            return transformedInput;
+          }
+          return undefined;
+        }
+        ngModelCtrl.$parsers.push(fromUser);
+      }
+    };
+  });
+</script>
+</html>

@@ -1,0 +1,388 @@
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href='/static/design.css' />
+    <title> news </title>
+  </head>
+  <body onload="getNews()" background = 'https://i.imgur.com/aiTCCvi.jpg' style = "background-size:cover";>
+    <nav style="background-color:transparent;"class="navbar navbar-default" style = 'padding-top:30px;padding-bottom:30px;'>
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="{% url 'index' %}"> NSBT </a>
+        </div>
+        <ul class="nav navbar-nav">
+          <li  > <a href= "{% url 'index' %}">  Home  </a> </li>
+          <li >  <a href= "{% url 'sportsPage' %}">  Sports  </a>  </li>
+          <li >  <a href= "{% url 'businessPage' %}">  Business  </a>  </li>
+          <li class="active">  <a href= "{% url 'technologyPage' %}">  Technology  </a>  </li>
+        </ul>
+        <form class="navbar-form navbar-right">
+          <div class="form-group">
+            <input type="text" class="form-control" placeholder="Username" id='uName'>
+            <input type="password" class="form-control" placeholder="Password" id='pWord'>
+            <label style="display: none;" id = 'usernameField'> username  </label>
+          </div>
+          <button type="submit" class="btn btn-default" id = 'logInButton' onclick = 'logIn()'>Log in &nbsp <span class="glyphicon glyphicon-log-in"></span><br></button>
+          <a href = "{%url 'signup'%}"> <button type="button" class="btn btn-default" id = 'registerButton'> Register &nbsp <span class="glyphicon glyphicon-user"></span><br></button> </a>
+          <label id = "loginFail" style = "display:hidden; color: #FF0000"> </label>
+          <a href = "{%url 'updateUser'%}"> <button type="button" class="btn btn-default" id = 'updateButton' style="display: none;"> Update </button> </a>
+          <button type="submit" class="btn btn-default" id = 'signOutButton' onclick = 'logOut()'style="display: none;"> Sign Out </button>
+        </form>
+      </div>
+    </nav>
+
+    <p id = 'content'>
+    </p>
+  </body>
+
+  <script type = 'text/javascript'>
+    function loadUpdate() {
+      $.ajax({
+        type: 'GET',
+        url: '/newsapp/updateDetails/',
+        success: function(){
+          window.location = window.location.href + "updateDetails/";
+        }
+      })
+    }
+
+    function getNews() {
+        document.title = 'tech'
+      load('https://newsapi.org/v2/top-headlines?sources=techcrunch&apiKey=c82804963efc4715bcc42a2f62379070')
+      $.ajax({
+        type: 'GET',
+          url: '/newsapp/checklogin/',
+          dataType: 'json',
+          success: this.sessionCheck
+      })
+    }
+
+
+    function load(link) {
+      $.ajax({
+        type: 'GET',
+          url: link,
+          dataType: 'json',
+          success: this.showNews
+      })
+    }
+
+    var loggedIn = false;
+    function sessionCheck(json){
+      if(json[0].success == 'true'){
+        loggedIn = true;
+        $("#usernameField").html(json[0].username),
+        $('#usernameField').css("display","inline"),
+        $('#uName').hide(),
+        $('#pWord').hide(),
+        $("#logInButton").hide(),
+        $("#registerButton").hide(),
+        $("#updateButton").css("display","inline"),
+        $("#signOutButton").css("display","inline")
+      } else {
+        $('#uName').show(),
+        $('#pWord').show(),
+        $("#logInButton").show(),
+        $("#registerButton").show(),
+        $("#usernameField").css("display","none"),
+        $("#updateButton").css("display","none"),
+        $("#signOutButton").css("display","none")
+      }
+    }
+
+    function logIn(){
+      loggedIn = true
+      $.ajax({
+        type:'POST',
+        url: '/newsapp/login/',
+        data: {
+          uname : $("#uName").val(),
+          password : $("#pWord").val(),
+        },
+        success: function(data){
+          userIsset(data)
+            getNews()
+        }
+      })
+      event.preventDefault();
+    }
+
+    function userIsset(json) {
+      if(json[0].success == 'true'){
+        $("#usernameField").html(json[0].username),
+        $('#usernameField').css("display","inline"),
+        $('#uName').hide(),
+        $('#pWord').hide(),
+        $("#logInButton").hide(),
+        $("#registerButton").hide(),
+        $("#updateButton").css("display","inline"),
+        $("#signOutButton").css("display","inline"),
+        $("#loginFail").html("")
+      } else {
+        $("#loginFail").html("Login Failed"),
+        $('#loginFail').css("display","inline")
+      }
+    }
+
+    function showNews(data) {
+      articleList = '';
+      for (var i = 0;i<data.articles.length;i++){
+        addArticle(data.articles[i].title, data.articles[i].url, data.articles[i].description, data.articles[i].publishedAt, document.title, data.articles[i].urlToImage)
+      }
+      articleList = '';
+      articleList += getOldArticles()
+      $("#content").html(articleList);
+    }
+
+    function getOldArticles(){
+      var type = document.title
+      var oldarticles;
+      oldarticleslist = "";
+      $.ajax({
+        async: false,
+        type: 'POST',
+          url: '/newsapp/getOldArticles/',
+          data: {
+            cat : 'tech'
+          },
+          success: function(data){
+            oldarticles = data
+          }
+      })
+
+        var like = "True";
+        var dlike = "False";
+        for (var i =0;i<oldarticles.length;i++){
+          comments = '';
+          comments_list =  getcomments(oldarticles[i].link)
+          for (var j = 0;j<comments_list.length;j++){
+            var user_name = getUserName(comments_list[j].user)
+            deleteButtonA = '';
+            if (loggedInMatchesUserComment(comments_list[j].user)){
+              deleteButtonA = '<button class="btn btn-danger btn-sm" onclick="deleteComment(\'' + oldarticles[i].link + '\', \'' + comments_list[j].text + '\')"> Delete </button>';
+            }
+            comments +=
+              '<table width = "20%"> <tr> <td style="color:white;"> <h4> <b>' + user_name + '</b> </h4>' + comments_list[j].Date + '</td> <td> ' + deleteButtonA + ' </td> </tr> </table>' +
+              '<p style = "font-size: 80%; color:white;">' +  comments_list[j].text + '</p>';
+          }
+          var countLikes = checkLikesOrDisLikes(oldarticles[i].link, "True");
+          var countDisLikes = checkLikesOrDisLikes(oldarticles[i].link, "False");
+          oldarticleslist +=
+            '<p align = "right">'+
+              '<table style = "background-color: #24385b;" width = "100%">' +
+                '<tr>' +
+                  '<td rowspan = "2" width = "20%">' +
+                    '<img src="'+ oldarticles[i].imagelink + '"  width = "100%" height = "30%"> ' +
+                  '</td>' +
+                  '<td style = "margin-top:0px; margin-bottom:0px;">'+
+                    '<h2 style="color:white;">' + oldarticles[i].title + '</h2>' +
+                  '</td>' +
+                '</tr>' +
+                '<tr>' +
+                  '<td style = "margin-top:0px;"><h4 style="color:white;">' + oldarticles[i].text +
+                    '</h4><a href = "' + oldarticles[i].link + '"> read more </a>' +
+                  '</td>' +
+                '</tr>' +
+
+                '<tr>' +
+                  '<td colspan = "2">' +
+                    '<div class="panel panel-default" style = "margin-bottom: 0%; background:#24385b; border-color:transparent;">' +
+                      '<div class="panel-heading" style = "margin-bottom: 0%; background:#24385b; border-color:transparent;">' +
+                        '<a data-toggle="collapse" href="#collapse' + i + '">' +
+                          '<button type="button" class="btn btn-info btn-sm">' +
+                            '<span class="glyphicon glyphicon-comment"> </span> Comment' +
+                          '</button>&nbsp' +
+                        '</a>' +
+                        '<button type="button" class="btn btn-success btn-sm" onclick = "likeornolike(\'' + oldarticles[i].link + '\' , \'' + like + '\')">' +
+                          '<span class="glyphicon glyphicon-thumbs-up"> </span>' + countLikes +
+                        '</button>&nbsp' +
+                        '<button type="button" class="btn btn-danger btn-sm" onclick = "likeornolike(\'' + oldarticles[i].link + '\' , \'' + dlike + '\')">' +
+                          '<span class="glyphicon glyphicon-thumbs-down"> </span>' + countDisLikes +
+                        '</button>' +
+                      '</div>' +
+                    '</div>' +
+
+                    '<div id="collapse' + i + '" class="panel-collapse collapse">' +
+                      '<div class="panel-body" border-color:transparent;"> <p style="color:white;"> Add Comment </p> <p style="color:white;"> <textarea id = "textArea' + i + '" rows="4" cols="50"> </textarea> </p>' +
+                      '<div class="panel-body"border-color:transparent;"> <button class="btn btn-info btn-sm" onclick = "addComment(\'' + oldarticles[i].link + '\', \'' + i + '\')"> Submit Comment </button> </div>' +
+                      '<div class="panel-body"border-color:transparent;"><p style="color:white;">' + comments + ' </p></div>' +
+                    '</div>' +
+                  '</td>' +
+                '</tr>' +
+              '</table>' +
+            '</p>';
+        }
+        return oldarticleslist
+      }
+
+      function loggedInMatchesUserComment(userid){
+        if (!loggedIn){
+          return false;
+        }
+        var match;
+        $.ajax({
+          async: false,
+          type: 'POST',
+            url: '/newsapp/checkUserMatches/',
+            data: {
+              user : userid,
+            },
+            success: function(data){
+                match = data[0].match;
+            }
+        })
+        return match;
+        event.preventDefault();
+      }
+
+      function getUserName(userid){
+        var name = "";
+        $.ajax({
+          async: false,
+          type: 'POST',
+            url: '/newsapp/getUserName/',
+            data: {
+              user : userid,
+            },
+            success: function(data){
+                name = data[0].name;
+            }
+        })
+        return name;
+        event.preventDefault();
+      }
+
+      function deleteComment(url, comment){
+        if (!loggedIn){
+          return;
+        }
+        $.ajax({
+          type: 'POST',
+            url: '/newsapp/deleteComment/',
+            data: {
+              articleurl : url,
+              text : comment,
+            },
+            success: function(data){
+                getNews()
+            }
+        })
+        event.preventDefault();
+      }
+
+      function addComment(url, i){
+        if (!loggedIn){
+          return;
+        }
+        textarea = "textArea" + i;
+        var comment = $("#"+textarea).val();
+        if (comment == null || comment == ""){
+          return
+        }
+        $.ajax({
+          type: 'POST',
+            url: '/newsapp/addComment/',
+            data: {
+              articleurl : url,
+              text : comment,
+            },
+            success: function(data){
+                getNews()
+            }
+        })
+        event.preventDefault();
+      }
+
+      function checkLikesOrDisLikes(url, like){
+        var count;
+        $.ajax({
+          async: false,
+          type: 'POST',
+            url: '/newsapp/checklikeOrDislike/',
+            data: {
+              articleurl : url,
+              iflike : like,
+            },
+            success: function(data){
+                count = data[0].count;
+            }
+        })
+        return count;
+        event.preventDefault();
+      }
+
+      function addArticle(title, link, description, publishedAt, type, imageurl){
+          $.ajax({
+              async:false,
+              type:'POST',
+              url:'/newsapp/addArticle/',
+              data:{
+                title: title,
+                link: link,
+                description: description,
+                published:publishedAt,
+                cat:type,
+                imagelink:imageurl
+              },
+              success: console.log('saved!')
+          })
+            event.preventDefault();
+      }
+
+      function getcomments(url){
+        var comments;
+        $.ajax({
+          async: false,
+          type: 'POST',
+            url: '/newsapp/getComments/',
+            data: {
+              articleurl : url,
+            },
+            success: function(data){
+              comments = data
+            }
+        })
+        return comments;
+        event.preventDefault();
+      }
+
+      function likeornolike(url, like) {
+        if (!loggedIn){
+          return;
+        }
+        $.ajax({
+          type:'POST',
+          url: '/newsapp/likeOrDislike/',
+          data: {
+            articleurl : url,
+            iflike : like,
+          },
+          success: function(data){
+              getNews()
+          }
+        })
+        event.preventDefault();
+      }
+
+      function logOut(){
+        loggedIn = false;
+        $.ajax({
+          type:'POST',
+          url: '/newsapp/logout/',
+          success: function(data){
+            $('#uName').show(),
+            $('#pWord').show(),
+            $("#logInButton").show(),
+            $("#registerButton").show(),
+            $("#usernameField").css("display","none"),
+            $("#updateButton").css("display","none"),
+            $("#signOutButton").css("display","none"),
+               getNews()
+          }
+        })
+        event.preventDefault();
+      }
+  </script>
+</html>
