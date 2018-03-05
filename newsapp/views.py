@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import logout
 from django.utils import dateformat
 
-@csrf_exempt
+
 def loggedin(request):
     if 'username' in request.session:
         #return f(request)
@@ -44,7 +44,6 @@ def businessPage(request):
     return render(request,'newsapp/business.html')
 
 
-@csrf_exempt
 def login(request):
     uname = request.POST['uname']
     password = request.POST['password']
@@ -72,7 +71,7 @@ def login(request):
         return JsonResponse(data, safe=False)
 
 
-@csrf_exempt
+
 def logout(request):
     if 'username' in request.session:
         u=request.session['username']
@@ -85,7 +84,7 @@ def logout(request):
 
 
 
-@csrf_exempt
+
 def like(request):
     if 'username' in request.session:
         like = request.POST['iflike']
@@ -116,7 +115,7 @@ def like(request):
         data = [{"success":"false"}]
         return JsonResponse(data, safe=False)
 
-@csrf_exempt
+
 def countLikes(request):
     like = request.POST['iflike']
     articleID = request.POST['articleurl']
@@ -125,7 +124,7 @@ def countLikes(request):
     data = [{"count": count}]
     return JsonResponse(data, safe=False)
 
-@csrf_exempt
+
 def viewComments(request):
     articleID = request.POST['articleurl']
     theArticle = Article.objects.get(link=articleID)
@@ -133,7 +132,7 @@ def viewComments(request):
     return JsonResponse(comments_list, safe=False)
 
 
-@csrf_exempt
+
 def addUser(request):
     email = request.POST["email"]
     try:
@@ -153,9 +152,6 @@ def addUser(request):
         return JsonResponse(data, safe=False)
 
 
-
-
-@csrf_exempt
 def update(request):
     old_password = request.POST['password']
     new_password = request.POST['new_password']
@@ -177,7 +173,6 @@ def update(request):
         return JsonResponse({'success': fail}, safe=False)
 
 
-@csrf_exempt
 def addArticle(request):
     link = request.POST['link']
     try:
@@ -194,7 +189,7 @@ def addArticle(request):
         data = [{"success": "added"}]
         return JsonResponse(data, safe=False)
 
-@csrf_exempt
+
 def addComment(request):
     comment = request.POST['text']
     url = request.POST['articleurl']
@@ -207,7 +202,7 @@ def addComment(request):
     data = [{"success": "added"}]
     return JsonResponse(data, safe=False)
 
-@csrf_exempt
+
 def deleteComment(request):
     comment = request.POST['text']
     url = request.POST['articleurl']
@@ -219,7 +214,7 @@ def deleteComment(request):
     data = [{"success": "deleted"}]
     return JsonResponse(data, safe=False)
 
-@csrf_exempt
+
 def getUserName(request):
     userid = request.POST['user']
     users = Users.objects.get(id=userid)
@@ -228,7 +223,7 @@ def getUserName(request):
     data = [{"name": name}]
     return JsonResponse(data, safe=False)
 
-@csrf_exempt
+
 def checkUserMatches(request):
     userid = request.POST['user']
     users = Users.objects.get(id=userid)
@@ -241,8 +236,6 @@ def checkUserMatches(request):
     data = [{"match": match}]
     return JsonResponse(data, safe=False)
 
-
-@csrf_exempt
 def getOldArticles(request):
     cat = request.POST['cat']
     article_list = list(Article.objects.filter(cat=cat).values('text', 'title','link','published','imagelink'))
